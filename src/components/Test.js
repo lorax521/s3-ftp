@@ -1,58 +1,38 @@
-import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
-import TreeView from "@material-ui/lab/TreeView";
-import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
-import ChevronRightIcon from "@material-ui/icons/ChevronRight";
-import TreeItem from "@material-ui/lab/TreeItem";
+import React, { useEffect } from "react";
 
-const data = {
-  id: "root",
-  name: "Parent",
-  children: [
-    {
-      id: "1",
-      name: "Child - 1",
-    },
-    {
-      id: "3",
-      name: "Child - 3",
-      children: [
-        {
-          id: "4",
-          name: "Child - 4",
-        },
-      ],
-    },
-  ],
+const Test = () => {
+  const buildtreeComponents = async () => {
+    // Load the AWS SDK for Node.js
+    const AWS = require("aws-sdk");
+    // Set the region
+    AWS.config.update({
+      credentials: false,
+      region: "us-east-1",
+    });
+
+    // Create S3 service object
+    const s3 = new AWS.S3({ apiVersion: "2006-03-01" });
+
+    // Create the parameters for calling listObjects
+    const bucketParams = {
+      Bucket: "fema-ftp-snapshot",
+    };
+
+    // Call S3 to obtain a list of the objects in the bucket
+    s3.listObjectsV2(bucketParams, function (err, data) {
+      if (err) {
+        console.error("Error", err);
+      } else {
+        console.log("Success", data);
+      }
+    });
+  };
+
+  useEffect(() => {
+    buildtreeComponents();
+  }, []);
+
+  return <div> happy happy joy joy</div>;
 };
 
-const useStyles = makeStyles({
-  root: {
-    height: 110,
-    flexGrow: 1,
-    maxWidth: 400,
-  },
-});
-
-export default function FTP() {
-  const classes = useStyles();
-
-  const renderTree = (nodes) => (
-    <TreeItem key={nodes.id} nodeId={nodes.id} label={nodes.name}>
-      {Array.isArray(nodes.children)
-        ? nodes.children.map((node) => renderTree(node))
-        : null}
-    </TreeItem>
-  );
-
-  return (
-    <TreeView
-      className={classes.root}
-      defaultCollapseIcon={<ExpandMoreIcon />}
-      defaultExpanded={["root"]}
-      defaultExpandIcon={<ChevronRightIcon />}
-    >
-      {renderTree(data)}
-    </TreeView>
-  );
-}
+export default Test;

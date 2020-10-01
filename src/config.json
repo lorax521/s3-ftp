@@ -1,4 +1,8 @@
 {
-  "akid": "AKIAYYGYD4OTKPXYS5KW",
-  "sakid": "L4Bf3l8cjYQUd/zEa/DKSwfoXogjvir9eI1XGEGA"
+  "accessKeyId": "",
+  "secretAccessKey": "",
+  "bucket": "YOUR_BUCKET",
+  "prefix": "",
+  "region": "us-east-1",
+  "baseURL": "https://YOUR_BUCKET.s3.amazonaws.com/"
 }

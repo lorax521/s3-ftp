@@ -9,6 +9,8 @@ import { faArrowCircleLeft } from "@fortawesome/free-solid-svg-icons";
 import { faFolder } from "@fortawesome/free-solid-svg-icons";
 import { faFile } from "@fortawesome/free-solid-svg-icons";
 
+var AWS = require("aws-sdk");
+
 const useStyles = makeStyles({
   root: {
     color: "white",
@@ -33,6 +35,13 @@ const useStyles = makeStyles({
   content: {
     margin: "0 3em 0 3em",
     display: "grid",
+  },
+  contentHeader: {
+    display: "flex",
+    alignItems: "center",
+  },
+  crumbs: {
+    marginLeft: "2rem",
   },
   back: {
     color: "#006ea0",
@@ -74,19 +83,25 @@ const FTP = () => {
   const history = useHistory();
   const [treePaths, setTreePaths] = useState({});
   const [treePathCurrent, setTreePathCurrent] = useState({});
+  const [mockCrumbs, setMockCrumbs] = useState(history.location.pathname);
 
-  var AWS = require("aws-sdk");
   AWS.config.update({
-    accessKeyId: config.akid,
-    secretAccessKey: config.sakid,
+    region: "us-east-1",
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+    // credentials: new AWS.CognitoIdentityCredentials({
+    // IdentityPoolId: awsmobile.aws_cognito_identity_pool_id
+    // }),
   });
   const s3 = new AWS.S3();
   const params = {
-    Bucket: "fema-ftp-snapshot" /* required */,
-    Prefix: "Hazus", // Can be your folder name
+    Bucket: config.bucket /* required */,
+    Prefix: config.prefix, // Can be your folder name
   };
 
-  const buildtreeComponents = () => {
+  const buildtreeComponents = async () => {
+    const data = await s3.listObjects(params);
+    console.log(data);
     s3.listObjectsV2(params, function (err, data) {
       if (err) console.error(err, err.stack);
       // an error occurred
@@ -109,8 +124,6 @@ const FTP = () => {
           });
           prevLevel[file] = { link: linkPrefix + path.Key };
         });
-        console.log("----treepath------");
-        console.log(treePaths);
         updateTreePathCurrent();
         history.push("?path=");
       }
@@ -127,10 +140,7 @@ const FTP = () => {
       let path = history.location.pathname;
       path = [path, target].join("/");
       path = path.replace("//", "/");
-      console.log("----targetlink------");
-      console.log(target);
-      console.log(link);
-      console.log(path);
+      setMockCrumbs(path);
       history.push(path);
       updateTreePathCurrent();
     }
@@ -138,13 +148,10 @@ const FTP = () => {
 
   const back = () => {
     let path = history.location.pathname;
-    console.log("----pathhistory------");
-    console.log(path);
-    console.log(history);
     path = path.split("/");
     path.pop();
     path = path.join("/");
-    console.log(path);
+    setMockCrumbs(path);
     history.push(path);
     updateTreePathCurrent();
   };
@@ -152,9 +159,6 @@ const FTP = () => {
   const updateTreePathCurrent = () => {
     let treeObj = { ...treePaths };
     const pathKeys = history.location.pathname.split("/");
-    console.log("updateTREEPATH");
-    console.log(pathKeys);
-    console.log(treeObj);
     pathKeys.forEach((pathKey) => {
       if (
         Object.keys(treeObj).includes(pathKey) &&
@@ -162,13 +166,8 @@ const FTP = () => {
         pathKey !== "index.html"
       ) {
         treeObj = treeObj[pathKey];
-        console.log("utpc - if");
-        console.log(pathKey);
-        console.log(treeObj);
       }
     });
-    console.log("updateTREEPATH - post");
-    console.log(treeObj);
     setTreePathCurrent({ ...treeObj });
   };
 
@@ -186,11 +185,14 @@ const FTP = () => {
         />
       </div>
       <div className={classes.content}>
-        <FontAwesomeIcon
-          className={classes.back}
-          onClick={back}
-          icon={faArrowCircleLeft}
-        />
+        <div className={classes.contentHeader}>
+          <FontAwesomeIcon
+            className={classes.back}
+            onClick={back}
+            icon={faArrowCircleLeft}
+          />
+          <p className={classes.crumbs}>{mockCrumbs}</p>
+        </div>
         <div>
           <h3 className={classes.sectionTitle}>
             Folders
@@ -201,9 +203,6 @@ const FTP = () => {
           </h3>
           <ul className={classes.list}>
             {Object.keys(treePathCurrent).map((key) => {
-              console.log("mapping");
-              console.log(treePathCurrent);
-              console.log(treePathCurrent[key].link);
               if (treePathCurrent[key].link === undefined) {
                 return (
                   <li
@@ -226,9 +225,6 @@ const FTP = () => {
           </h3>
           <ul className={classes.list}>
             {Object.keys(treePathCurrent).map((key) => {
-              console.log("mapping");
-              console.log(treePathCurrent);
-              console.log(treePathCurrent[key].link);
               if (treePathCurrent[key].link !== undefined) {
                 return (
                   <li
